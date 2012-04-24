@@ -1,0 +1,49 @@
+#!/bin/bash
+
+#
+# Simple wrapper to allow simple watching of youtube videos
+#
+
+DIR=~/.youtube
+mkdir -p $DIR
+
+TEMPLATE="%(stitle)s-%(id)s.%(ext)s"
+FILE=$DIR/`youtube-dl -o $TEMPLATE --get-filename "$1"`
+S=$?
+if [ $S -ne 0 ]; then
+	echo ERROR
+	exit
+fi 
+
+#-o "%(stitle)s-%(id)s.%(ext)s"
+#	-o $FILE \
+#-w -c
+
+youtube-dl \
+	--ignore-errors \
+	--max-quality=18 \
+	--quiet \
+	--console-title \
+	-o $FILE \
+	--continue \
+	"$1" &
+
+echo Wait for file
+while [ ! -s ${FILE}.part -a ! -s ${FILE} ]; do
+	sleep 1
+done
+
+if [ -e ${FILE} ]; then
+	mplayer ${FILE}
+	exit
+fi
+
+echo Wait for size
+while [ $BIG -eq 0 ]; do
+	if find ${FILE}.part -size +1M | grep ${FILE}.part >/dev/null; then
+		BIG=1
+	fi
+done
+
+mplayer ${FILE}.part
+
