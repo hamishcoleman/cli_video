@@ -39,6 +39,7 @@ if [ -e ${FILE} ]; then
 fi
 
 echo Wait for size
+BIG=0
 while [ $BIG -eq 0 ]; do
 	if find ${FILE}.part -size +1M | grep ${FILE}.part >/dev/null; then
 		BIG=1
