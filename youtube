@@ -33,18 +33,13 @@ while [ ! -s ${FILE}.part -a ! -s ${FILE} ]; do
 	sleep 1
 done
 
-if [ -e ${FILE} ]; then
-	mplayer ${FILE}
-	exit
-fi
-
 echo Wait for size
 BIG=0
-while [ $BIG -eq 0 ]; do
+while [ $BIG -eq 0 -a ! -e ${FILE} ]; do
 	if find ${FILE}.part -size +1M | grep ${FILE}.part >/dev/null; then
 		BIG=1
 	fi
 done
 
-mplayer ${FILE}.part
+mplayer ${FILE}*
 
