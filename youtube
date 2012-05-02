@@ -28,7 +28,7 @@ youtube-dl \
 	--continue \
 	"$1" &
 
-echo Wait for file
+echo Wait for file ${FILE}.part
 while [ ! -s ${FILE}.part -a ! -s ${FILE} ]; do
 	sleep 1
 done
