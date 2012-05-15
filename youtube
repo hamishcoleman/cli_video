@@ -4,6 +4,14 @@
 # Simple wrapper to allow simple watching of youtube videos
 #
 
+#
+# TODO
+# - store the URL somewhere (or make it easy to regenerate)
+# - extract the Id from the URL param and look for a completed file without
+#   hitting the internet (ls ~/.youtube/*$ID.*
+#
+
+
 DIR=~/.youtube
 mkdir -p $DIR
 
@@ -28,7 +36,7 @@ youtube-dl \
 	--continue \
 	"$1" &
 
-echo Wait for file
+echo Wait for file ${FILE}.part
 while [ ! -s ${FILE}.part -a ! -s ${FILE} ]; do
 	sleep 1
 done
