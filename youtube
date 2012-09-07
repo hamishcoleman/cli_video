@@ -15,10 +15,17 @@
 DIR=~/.youtube
 mkdir -p $DIR
 
-LOGFILE=~/s/organizer/youtube.log
+LOGFILE=~/s/organizer/youtube.log.`hostname`
+
+if [ -x ~/tmp/src/youtube-dl/youtube-dl ]; then
+	# use the newer version
+	DL=~/tmp/src/youtube-dl/youtube-dl
+else
+	DL=youtube-dl
+fi
 
 TEMPLATE="%(stitle)s-%(id)s.%(ext)s"
-BASENAME=`youtube-dl -o $TEMPLATE --get-filename "$1"`
+BASENAME=`$DL -o $TEMPLATE --get-filename "$1"`
 FILE=$DIR/$BASENAME
 S=$?
 if [ $S -ne 0 ]; then
@@ -34,7 +41,7 @@ echo "`date --rfc-3339=seconds` $1 $BASENAME" >>$LOGFILE
 #	-o $FILE \
 #-w -c
 
-youtube-dl \
+$DL \
 	--ignore-errors \
 	--max-quality=18 \
 	--quiet \
@@ -56,5 +63,8 @@ while [ $BIG -eq 0 -a ! -e ${FILE} ]; do
 	fi
 done
 
+# Race here between the *.part having the right size and finishing..
+
 mplayer ${FILE}*
 
+echo $FILE
