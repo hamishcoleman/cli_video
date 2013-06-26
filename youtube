@@ -24,8 +24,8 @@ else
 	DL=youtube-dl
 fi
 
-TEMPLATE="%(stitle)s-%(id)s.%(ext)s"
-BASENAME=`$DL -o $TEMPLATE --get-filename "$1"`
+TEMPLATE="%(title)s-%(id)s.%(ext)s"
+BASENAME=`$DL -o $TEMPLATE --get-filename "$1" |tr " " "_"`
 FILE=$DIR/$BASENAME
 S=$?
 if [ $S -ne 0 ]; then
@@ -46,7 +46,7 @@ $DL \
 	--max-quality=18 \
 	--quiet \
 	--console-title \
-	-o $FILE \
+	-o "$FILE" \
 	--continue \
 	"$1" &
 
