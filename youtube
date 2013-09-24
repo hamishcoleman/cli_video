@@ -15,7 +15,7 @@
 DIR=~/.youtube
 mkdir -p $DIR
 
-LOGFILE=~/s/organizer/youtube.log.`hostname`
+LOGFILE=~/s/organizer/youtube/youtube.log.`hostname`
 
 if [ -x ~/tmp/src/youtube-dl/youtube-dl ]; then
 	# use the newer version
@@ -26,12 +26,18 @@ fi
 
 TEMPLATE="%(title)s-%(id)s.%(ext)s"
 BASENAME=`$DL -o $TEMPLATE --get-filename "$1" |tr " " "_"`
-FILE=$DIR/$BASENAME
 S=$?
 if [ $S -ne 0 ]; then
 	echo ERROR
 	exit
 fi 
+if [ -z "$BASENAME" ]; then
+    echo ERROR: null basename
+    exit
+fi
+FILE=$DIR/$BASENAME
+
+
 
 # Note this one down
 mkdir -p `dirname $LOGFILE`
@@ -56,12 +62,11 @@ while [ ! -s ${FILE}.part -a ! -s ${FILE} ]; do
 done
 
 echo Wait for size
-BIG=0
-while [ $BIG -eq 0 -a ! -e ${FILE} ]; do
-	if find ${FILE}.part -size +1M | grep ${FILE}.part >/dev/null; then
-		BIG=1
-	fi
+SIZE=`stat -c %s ${FILE}.part`
+# FIXME - should vary size based on percentage or bitstream rate
+while [ $SIZE -lt 1000000 -a ! -e ${FILE} ]; do
     sleep 1
+    SIZE=`stat -c %s ${FILE}.part`
 done
 
 # Race here between the *.part having the right size and finishing..
