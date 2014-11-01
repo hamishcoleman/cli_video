@@ -15,7 +15,7 @@
 DIR=~/.youtube
 mkdir -p $DIR
 
-LOGFILE=~/s/organizer/youtube/youtube.log.`hostname`
+LOGFILE=~/s/organizer/youtube/youtube.log.$(hostname)
 
 if [ -x ~/tmp/src/youtube-dl/youtube-dl ]; then
 	# use the newer version
@@ -25,7 +25,7 @@ else
 fi
 
 TEMPLATE="%(title)s-%(id)s.%(ext)s"
-BASENAME=`$DL -o $TEMPLATE --get-filename "$1" |tr " []%" "_"`
+BASENAME=$($DL -o $TEMPLATE --get-filename "$1" |tr " []%" "_")
 S=$?
 if [ $S -ne 0 ]; then
 	echo ERROR
@@ -40,8 +40,8 @@ FILE=$DIR/$BASENAME
 
 
 # Note this one down
-mkdir -p `dirname $LOGFILE`
-echo "`date --rfc-3339=seconds` $1 $BASENAME" >>$LOGFILE
+mkdir -p "$(dirname "$LOGFILE")"
+echo "$(date --rfc-3339=seconds) $1 $BASENAME" >>"$LOGFILE"
 
 #
 if [ -d ~/s/organizer/youtube/annex ]; then
@@ -64,21 +64,21 @@ $DL \
 	--continue \
 	"$1" &
 
-echo Wait for file ${FILE}.part
-while [ ! -s ${FILE}.part -a ! -s ${FILE} ]; do
+echo "Wait for file ${FILE}.part"
+while [ ! -s "${FILE}.part" -a ! -s "${FILE}" ]; do
 	sleep 1
 done
 
 echo Wait for size
-SIZE=`stat -c %s ${FILE}.part`
+SIZE=$(stat -c %s "${FILE}.part")
 # FIXME - should vary size based on percentage or bitstream rate
-while [ $SIZE -lt 1000000 -a ! -e "${FILE}" ]; do
+while [ "$SIZE" -lt 1000000 -a ! -e "${FILE}" ]; do
     sleep 1
-    SIZE=`stat -c %s "${FILE}.part"`
+    SIZE=$(stat -c %s "${FILE}.part")
 done
 
 # Race here between the *.part having the right size and finishing..
 
-mplayer ${FILE}*
+mplayer "${FILE}"*
 
-echo $FILE
+echo "$FILE"
