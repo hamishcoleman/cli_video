@@ -25,7 +25,7 @@ else
 fi
 
 TEMPLATE="%(title)s-%(id)s.%(ext)s"
-BASENAME=`$DL -o $TEMPLATE --get-filename "$1" |tr " []" "_"`
+BASENAME=`$DL -o $TEMPLATE --get-filename "$1" |tr " []%" "_"`
 S=$?
 if [ $S -ne 0 ]; then
 	echo ERROR
