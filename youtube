@@ -56,9 +56,11 @@ fi
 #	-o $FILE \
 #-w -c
 
+# TODO - replace this with something else
+#	--max-quality=18 \
+
 $DL \
 	--ignore-errors \
-	--max-quality=18 \
 	--quiet \
 	--console-title \
 	-o "$FILE" \
