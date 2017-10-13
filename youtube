@@ -84,6 +84,10 @@ done
 
 echo Wait for size
 SIZE=$(stat -c %s "${FILE}.part")
+if [ -z "$SIZE" ]; then
+    SIZE=0
+fi
+
 # FIXME - should vary size based on percentage or bitstream rate
 while [ "$SIZE" -lt 1000000 -a ! -e "${FILE}" ]; do
     sleep 1
