@@ -32,6 +32,10 @@ fi
 
 URL="$1"
 if [ -z "$URL" ]; then
+    # try getting it from the clipboard
+    URL=`xclip -o`
+fi
+if [ -z "$URL" ]; then
     echo need url
     exit 1
 fi
