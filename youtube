@@ -96,6 +96,8 @@ done
 
 # Race here between the *.part having the right size and finishing..
 
+# TODO - pause playing music
 mplayer "${FILE}"*
+# TODO - unpause playing music
 
 echo "$FILE"
