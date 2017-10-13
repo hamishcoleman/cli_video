@@ -17,6 +17,10 @@ mkdir -p $DIR
 
 LOGFILE=~/s/organizer/youtube/youtube.log.$(hostname)
 
+if [ -z "$FORMAT" ]; then
+    FORMAT=43/18/35/45/22/best
+fi
+
 if [ -x ~/tmp/src/youtube-dl/youtube-dl ]; then
 	# use the newer version
 	DL=~/tmp/src/youtube-dl/youtube-dl
@@ -60,6 +64,7 @@ fi
 
 # TODO - replace this with something else
 #	--max-quality=18 \
+#        -f 18 \
 
 $DL \
 	--ignore-errors \
@@ -67,6 +72,9 @@ $DL \
 	--console-title \
 	-o "$FILE" \
 	--continue \
+        --format "$FORMAT" \
+        --youtube-skip-dash-manifest \
+        --write-info-json \
 	"$1" &
 
 echo "Wait for file ${FILE}.part"
