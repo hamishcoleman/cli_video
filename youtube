@@ -30,8 +30,14 @@ else
 	DL=youtube-dl
 fi
 
+URL="$1"
+if [ -z "$URL" ]; then
+    echo need url
+    exit 1
+fi
+
 TEMPLATE="%(title)s-%(id)s.%(ext)s"
-BASENAME=$($DL -o $TEMPLATE --get-filename "$1" |head -1 |tr " []%" "_")
+BASENAME=$($DL -o $TEMPLATE --get-filename "$URL" |head -1 |tr " []%" "_")
 # TODO - detect a multi-line response as a playlist and handle it appropriately
 S=$?
 if [ $S -ne 0 ]; then
@@ -48,13 +54,13 @@ FILE=$DIR/$BASENAME
 
 # Note this one down
 mkdir -p "$(dirname "$LOGFILE")"
-echo "$(date --rfc-3339=seconds) $1 $BASENAME" >>"$LOGFILE"
+echo "$(date --rfc-3339=seconds) $URL $BASENAME" >>"$LOGFILE"
 
 # #
 # if [ -d ~/s/organizer/youtube/annex ]; then
 # (
 #     cd ~/s/organizer/youtube/annex
-#     git annex addurl --relaxed --file "$BASENAME" "$1"
+#     git annex addurl --relaxed --file "$BASENAME" "$URL"
 # )
 # fi
 
@@ -75,7 +81,7 @@ $DL \
         --format "$FORMAT" \
         --youtube-skip-dash-manifest \
         --write-info-json \
-	"$1" &
+	"$URL" &
 
 echo "Wait for file ${FILE}.part"
 while [ ! -s "${FILE}.part" -a ! -s "${FILE}" ]; do
