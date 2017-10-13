@@ -20,6 +20,8 @@ LOGFILE=~/s/organizer/youtube/youtube.log.$(hostname)
 if [ -x ~/tmp/src/youtube-dl/youtube-dl ]; then
 	# use the newer version
 	DL=~/tmp/src/youtube-dl/youtube-dl
+elif [ -x ~/r/upstream/youtube-dl/youtube-dl ]; then
+	DL=~/r/upstream/youtube-dl/youtube-dl
 else
 	DL=youtube-dl
 fi
