@@ -50,13 +50,13 @@ FILE=$DIR/$BASENAME
 mkdir -p "$(dirname "$LOGFILE")"
 echo "$(date --rfc-3339=seconds) $1 $BASENAME" >>"$LOGFILE"
 
-#
-if [ -d ~/s/organizer/youtube/annex ]; then
-(
-    cd ~/s/organizer/youtube/annex
-    git annex addurl --relaxed --file "$BASENAME" "$1"
-)
-fi
+# #
+# if [ -d ~/s/organizer/youtube/annex ]; then
+# (
+#     cd ~/s/organizer/youtube/annex
+#     git annex addurl --relaxed --file "$BASENAME" "$1"
+# )
+# fi
 
 #-o "%(stitle)s-%(id)s.%(ext)s"
 #	-o $FILE \
