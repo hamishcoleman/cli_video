@@ -110,4 +110,5 @@ done
 mplayer "${FILE}"*
 # TODO - unpause playing music
 
+echo "$URL"
 echo "$FILE"
