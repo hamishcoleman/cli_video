@@ -94,7 +94,7 @@ done
 
 echo Wait for size
 SIZE=$(stat -c %s "${FILE}.part")
-if [ -z "$SIZE" ]; then
+if [ $? -ne 0 -o -z "$SIZE" ]; then
     SIZE=0
 fi
 
