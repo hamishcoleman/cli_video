@@ -41,7 +41,7 @@ if [ -z "$URL" ]; then
 fi
 
 TEMPLATE="%(title)s-%(id)s.%(ext)s"
-BASENAME=$($DL -o $TEMPLATE --get-filename "$URL" |head -1 |tr " []%" "_")
+BASENAME=$($DL -o $TEMPLATE --get-filename "$URL" |head -1 |tr " []%" "_" |tail -c230)
 # TODO - detect a multi-line response as a playlist and handle it appropriately
 S=$?
 if [ $S -ne 0 ]; then
