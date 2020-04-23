@@ -92,10 +92,13 @@ def progress_hook(d):
     if triggered:
         progress_data['triggered'] = True
 
-        if 'tmpfilename' in d:
-            filename = d['tmpfilename']
-        else:
-            filename = d['filename']
+        # Could attempt to reduce the race condition, but not close it, by
+        # sending the filename back up to the main process
+
+        # if 'tmpfilename' in d:
+        #     filename = d['tmpfilename']
+        # else:
+        #     filename = d['filename']
 
         progress_data['w'].write(b'1')
 
@@ -168,8 +171,8 @@ def main():
         'writesubtitles': False,  # we wrote them out above
     })
 
-    r,w = os.pipe()
-    r,w=os.fdopen(r,'rb',0), os.fdopen(w,'wb',0)
+    r, w = os.pipe()
+    r, w = os.fdopen(r, 'rb', 0), os.fdopen(w, 'wb', 0)
 
     pid = os.fork()
     if pid == 0:
@@ -181,7 +184,9 @@ def main():
 
     # parent
     w.close()
-    data = r.read(1)
+
+    # Wait on trigger byte
+    r.read(1)
 
     if os.path.exists(outname):
         filename = outname
@@ -196,9 +201,9 @@ def main():
 
     r = subprocess.run(
         args,
-        stdin = 0,
-        stdout = 1,
-        stderr = 2,
+        stdin=0,
+        stdout=1,
+        stderr=2,
     )
 
     # TODO:
