@@ -102,7 +102,12 @@ def progress_hook(d):
 
 def main():
     # TODO: argsparser
-    url = sys.argv[1]
+
+    if len(sys.argv) < 2:
+        r = subprocess.run(['xclip', '-o'], capture_output=True, text=True)
+        url = r.stdout
+    else:
+        url = sys.argv[1]
     format = '43/18/35/45/22/best'
     cachedir = os.path.expanduser('~/.youtube')
     logdir = os.path.expanduser('~/s/organizer/youtube/')
