@@ -1,0 +1,184 @@
+#!/usr/bin/env python3
+#
+# Wrapper around the youtube-dl library interface to try and make a usable
+# CLI viewer with local cache
+#
+
+from __future__ import unicode_literals
+
+import datetime
+import json
+import os
+import socket
+import subprocess
+import sys
+import urllib.request
+
+# Define where the look for the youtube-dl libraries.  I would have used
+# site.addsitedir(), but it does an append, not an insert...
+sys.path.insert(0, os.path.expanduser('~/r/upstream/youtube-dl'))
+
+import youtube_dl # noqa
+
+
+def make_basename(info):
+    """Given the json info, construct the output base filename"""
+
+    bad = ' /[]*%"\''
+    bar = '_' * len(bad)
+    trans = str.maketrans(bad, bar)
+
+    title = info['title'].strip().translate(trans)
+    id = info['id']
+
+    title = title[:230-len(id)]
+    return '-'.join([title, id])
+
+
+def get_subs_url(info):
+    """Given the json info, find the best url"""
+
+    if 'requested_subtitles' not in info:
+        return None
+
+    if info['requested_subtitles'] is None:
+        return None
+
+    for subdef in info['requested_subtitles'].values():
+        if subdef['ext'] == 'vtt':
+            return subdef['url']
+
+    return None
+
+
+def get_subs(info):
+    """Download the subtitles and return the string"""
+    # TODO: returning the entire text could be a memory hog
+
+    url = get_subs_url(info)
+    if url is None:
+        return None
+
+    with urllib.request.urlopen(url) as response:
+        subs = response.read()
+
+    return subs
+
+
+progress_data = {}
+
+
+def progress_hook(d):
+    if 'downloaded_bytes' in d:
+        downloaded_bytes = d['downloaded_bytes']
+    elif 'total_bytes_estimate' in d:
+        downloaded_bytes = d['total_bytes_estimate']
+    else:
+        downloaded_bytes = 1
+
+    seconds_downloaded = downloaded_bytes / progress_data['bps']
+
+    triggered = False
+    if not progress_data['triggered']:
+        # TODO:
+        # - the two thresholds should be parameterised
+        if seconds_downloaded > 15:
+            triggered = True
+        elif downloaded_bytes > 2500000:
+            triggered = True
+        elif d['status'] == 'finished':
+            triggered = True
+
+    if triggered:
+        progress_data['triggered'] = True
+
+        if 'tmpfilename' in d:
+            filename = d['tmpfilename']
+        else:
+            filename = d['filename']
+
+        pid = os.fork()
+        if pid == 0:
+            r = subprocess.run(
+                ['mplayer', '-sub', progress_data['subsname'], filename],
+                stdin = 0,
+                stdout = 1,
+                stderr = 2,
+            )
+            exit(r.returncode)
+
+
+def main():
+    # TODO: argsparser
+    url = sys.argv[1]
+    format = '43/18/35/45/22/best'
+    cachedir = os.path.expanduser('~/.youtube')
+    logdir = os.path.expanduser('~/s/organizer/youtube/')
+
+    # FIXME:
+    # if not url:
+    #   url=`xclip -o`
+
+    if not os.path.exists(cachedir):
+        os.makedirs(cachedir)
+
+    if not os.path.exists(logdir):
+        os.makedirs(logdir)
+
+    logfile = os.path.join(logdir, 'youtube.log.' + socket.gethostname())
+
+    ydl_opts = {
+        'quiet': True,
+        'writesubtitles': True,  # causes extrac_info to fetch subtitle info
+        'format': format,
+        'youtube_include_dash_manifest': False,
+        'consoletitle': True,
+        'progress_hooks': [progress_hook],
+    }
+
+    ydl = youtube_dl.YoutubeDL(ydl_opts)
+
+    info = ydl.extract_info(url, download=False)
+
+    subs = get_subs(info)
+
+    basename = make_basename(info)
+    rootname = os.path.join(cachedir, basename)
+    subsname = rootname+'.vtt'
+
+    with open(rootname+'.info.json', 'w') as f:
+        json.dump(info, f, indent=2, sort_keys=True, separators=(',', ': '))
+
+    if subs is not None:
+        with open(subsname, 'wb') as f:
+            f.write(subs)
+
+    progress_data['bps'] = info['filesize'] / info['duration']
+    progress_data['triggered'] = False
+    progress_data['subsname'] = subsname
+
+    print("url=", url)
+    print("file=", rootname)
+
+    now = datetime.datetime.now(datetime.timezone.utc).astimezone()
+    now = now.replace(microsecond=0)
+    nowstr = now.isoformat()
+    with open(logfile, 'a') as f:
+        f.write("{} {} {}.{}\n".format(nowstr, url, basename, info['ext']))
+
+    ydl.params.update({
+        'outtmpl': rootname + '.%(ext)s',
+        'writesubtitles': False,  # we wrote them out above
+    })
+
+    # FIXME:
+    # - run thise download in a child process
+    # - send a trigger back to us
+    # - blocking run the mplayer from the main process
+    ydl.process_info(info)
+
+    # display some details after playback finishes
+
+
+if __name__ == '__main__':
+    main()
