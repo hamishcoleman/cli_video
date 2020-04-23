@@ -97,15 +97,7 @@ def progress_hook(d):
         else:
             filename = d['filename']
 
-        pid = os.fork()
-        if pid == 0:
-            r = subprocess.run(
-                ['mplayer', '-sub', progress_data['subsname'], filename],
-                stdin = 0,
-                stdout = 1,
-                stderr = 2,
-            )
-            exit(r.returncode)
+        progress_data['w'].write(b'1')
 
 
 def main():
@@ -155,7 +147,6 @@ def main():
 
     progress_data['bps'] = info['filesize'] / info['duration']
     progress_data['triggered'] = False
-    progress_data['subsname'] = subsname
 
     print("url=", url)
     print("file=", rootname)
@@ -166,18 +157,43 @@ def main():
     with open(logfile, 'a') as f:
         f.write("{} {} {}.{}\n".format(nowstr, url, basename, info['ext']))
 
+    outname = rootname + '.' + info['ext']
     ydl.params.update({
-        'outtmpl': rootname + '.%(ext)s',
+        'outtmpl': outname,
         'writesubtitles': False,  # we wrote them out above
     })
 
-    # FIXME:
-    # - run thise download in a child process
-    # - send a trigger back to us
-    # - blocking run the mplayer from the main process
-    ydl.process_info(info)
+    r,w = os.pipe()
+    r,w=os.fdopen(r,'rb',0), os.fdopen(w,'wb',0)
 
+    pid = os.fork()
+    if pid == 0:
+        # child
+        r.close()
+        progress_data['w'] = w
+        ydl.process_info(info)
+        exit(0)
+
+    # parent
+    w.close()
+    data = r.read(1)
+
+    if os.path.exists(outname):
+        filename = outname
+    else:
+        # FIXME - race condition with file completing..
+        filename = outname + '.part'
+
+    r = subprocess.run(
+        ['mplayer', '-sub', subsname, filename],
+        stdin = 0,
+        stdout = 1,
+        stderr = 2,
+    )
+
+    # TODO:
     # display some details after playback finishes
+    exit(r.returncode)
 
 
 if __name__ == '__main__':
