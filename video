@@ -184,8 +184,13 @@ def main():
         # FIXME - race condition with file completing..
         filename = outname + '.part'
 
+    args = ['mplayer']
+    if subs is not None:
+        args += ['-sub', subsname]
+    args += [filename]
+
     r = subprocess.run(
-        ['mplayer', '-sub', subsname, filename],
+        args,
         stdin = 0,
         stdout = 1,
         stderr = 2,
