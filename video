@@ -82,9 +82,9 @@ def progress_hook(d):
     if not progress_data['triggered']:
         # TODO:
         # - the two thresholds should be parameterised
-        if seconds_downloaded > 15:
+        if seconds_downloaded > 20:
             triggered = True
-        elif downloaded_bytes > 2500000:
+        elif downloaded_bytes > 3000000:
             triggered = True
         elif d['status'] == 'finished':
             triggered = True
