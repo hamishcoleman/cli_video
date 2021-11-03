@@ -202,7 +202,8 @@ def main():
     # - if file.part exists, we are already downloading it ...
 
     r, w = os.pipe()
-    r, w = os.fdopen(r, 'rb', 0), os.fdopen(w, 'wb', 0)
+    r = os.fdopen(r, 'rb', 0)
+    w = os.fdopen(w, 'wb', 0)
 
     pid = os.fork()
     if pid == 0:
