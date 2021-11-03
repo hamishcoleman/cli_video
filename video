@@ -100,17 +100,25 @@ def progress_hook(d):
         # else:
         #     filename = d['filename']
 
-        progress_data['w'].write(b'1')
+        progress_data['w'].write(b'a')
+
+
+def print_info(url, rootname):
+    print("url=", url)
+    print("file=", rootname)
 
 
 def main():
-    # TODO: argsparser
+    # TODO:
+    # - argsparser
+    # - older subprocess does not have "run" method
 
     if len(sys.argv) < 2:
         r = subprocess.run(['xclip', '-o'], capture_output=True, text=True)
         url = r.stdout
     else:
         url = sys.argv[1]
+    url = url.strip(' ')
     format = '43/18/35/45/22/best'
     cachedir = os.path.expanduser('~/.youtube')
     logdir = os.path.expanduser('~/s/organizer/youtube/')
@@ -130,6 +138,7 @@ def main():
     ydl_opts = {
         'quiet': True,
         'writesubtitles': True,  # causes extrac_info to fetch subtitle info
+        'subtitleslangs': ['en', 'en-GB', 'en-US', 'en-AU', 'en-NZ', 'en-GB'],
         'format': format,
         'youtube_include_dash_manifest': False,
         'consoletitle': True,
@@ -138,12 +147,24 @@ def main():
 
     ydl = youtube_dl.YoutubeDL(ydl_opts)
 
-    info = ydl.extract_info(url, download=False)
+    # Sometimes, format is not available (raises DownloadError)
+    # TODO: handle this?  optional different formats? etc?
+
+    # TODO:
+    # - retry sometimes works
+    # - distingush different errors
+
+    try:
+        info = ydl.extract_info(url, download=False)
+    except youtube_dl.DownloadError as e:
+        print("DownloadError caught")
+        exit(1)
 
     subs = get_subs(info)
 
     basename = make_basename(info)
     rootname = os.path.join(cachedir, basename)
+    ext = info.get('ext', 'unknown')
     subsname = rootname+'.vtt'
 
     with open(rootname+'.info.json', 'w') as f:
@@ -153,23 +174,32 @@ def main():
         with open(subsname, 'wb') as f:
             f.write(subs)
 
-    progress_data['bps'] = info['filesize'] / info['duration']
+    filesize = info.get('filesize', 2000000)
+    duration = info.get('duration', 60)
+
+    if duration == 0:
+        duration = 60
+
+    progress_data['bps'] = filesize / duration
     progress_data['triggered'] = False
 
-    print("url=", url)
-    print("file=", rootname)
+    print_info(url, rootname)
 
     now = datetime.datetime.now(datetime.timezone.utc).astimezone()
     now = now.replace(microsecond=0)
     nowstr = now.isoformat()
     with open(logfile, 'a') as f:
-        f.write("{} {} {}.{}\n".format(nowstr, url, basename, info['ext']))
+        f.write("{} {} {}.{}\n".format(nowstr, url, basename, ext))
 
-    outname = rootname + '.' + info['ext']
+    outname = rootname + '.' + ext
     ydl.params.update({
         'outtmpl': outname,
         'writesubtitles': False,  # we wrote them out above
     })
+
+    # TODO:
+    # - if file exists, perhaps we already have it downloaded ...
+    # - if file.part exists, we are already downloading it ...
 
     r, w = os.pipe()
     r, w = os.fdopen(r, 'rb', 0), os.fdopen(w, 'wb', 0)
@@ -186,29 +216,44 @@ def main():
     w.close()
 
     # Wait on trigger byte
-    r.read(1)
+    c = r.read(1)
+    if c is None:
+        print("Got EOF on pipe")
+    expect_c = b'a'
+    if c != expect_c:
+        print("Unexpected '" + c.decode('utf-8') +"' instead of '" + expect_c.decode('utf-8') + "' on pipe")
 
-    if os.path.exists(outname):
-        filename = outname
+    if 'DISPLAY' in os.environ:
+        # If we have no display, dont try to play it
+
+        if os.path.exists(outname):
+            filename = outname
+        else:
+            # FIXME - race condition with file completing..
+            filename = outname + '.part'
+
+        args = ['mplayer']
+        args += ['-stop-xscreensaver']
+
+        if subs is not None:
+            args += ['-sub', subsname]
+        args += [filename]
+
+        r = subprocess.run(
+            args,
+            stdin=0,
+            stdout=1,
+            stderr=2,
+        )
+        print_info(url, rootname)
+        returncode = r.returncode
     else:
-        # FIXME - race condition with file completing..
-        filename = outname + '.part'
+        returncode = 0
 
-    args = ['mplayer']
-    if subs is not None:
-        args += ['-sub', subsname]
-    args += [filename]
+    exit(returncode)
 
-    r = subprocess.run(
-        args,
-        stdin=0,
-        stdout=1,
-        stderr=2,
-    )
-
-    # TODO:
-    # display some details after playback finishes
-    exit(r.returncode)
+    # FIXME:
+    # - if download has not finished, we hang here, waiting
 
 
 if __name__ == '__main__':
