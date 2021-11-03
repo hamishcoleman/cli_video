@@ -160,16 +160,15 @@ def main():
         print("DownloadError caught")
         exit(1)
 
-    subs = get_subs(info)
-
     basename = make_basename(info)
     rootname = os.path.join(cachedir, basename)
     ext = info.get('ext', 'unknown')
-    subsname = rootname+'.vtt'
 
     with open(rootname+'.info.json', 'w') as f:
         json.dump(info, f, indent=2, sort_keys=True, separators=(',', ': '))
 
+    subsname = rootname+'.vtt'
+    subs = get_subs(info)
     if subs is not None:
         with open(subsname, 'wb') as f:
             f.write(subs)
