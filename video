@@ -154,6 +154,9 @@ def main():
     # - retry sometimes works
     # - distingush different errors
 
+    # TODO:
+    # - dont download the subtitles until we know it is not a playlist
+
     try:
         info = ydl.extract_info(url, download=False)
     except youtube_dl.DownloadError as e:
@@ -166,6 +169,14 @@ def main():
 
     with open(rootname+'.info.json', 'w') as f:
         json.dump(info, f, indent=2, sort_keys=True, separators=(',', ': '))
+
+    _type = info.get('_type')
+    if _type == 'playlist':
+        print("Playlist:", info.get('title',''))
+        for entry in info.get('entries'):
+            print(entry.get('webpage_url'))
+            print("   ", entry.get('title'))
+        exit(1)
 
     subsname = rootname+'.vtt'
     subs = get_subs(info)
