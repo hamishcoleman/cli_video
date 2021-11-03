@@ -24,7 +24,7 @@ import youtube_dl # noqa
 def make_basename(info):
     """Given the json info, construct the output base filename"""
 
-    bad = ' /[]*%"\''
+    bad = ' /[]*%"\':'
     bar = '_' * len(bad)
     trans = str.maketrans(bad, bar)
 
