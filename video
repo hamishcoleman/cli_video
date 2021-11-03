@@ -210,19 +210,29 @@ def main():
         # child
         r.close()
         progress_data['w'] = w
-        ydl.process_info(info)
+        try:
+            ydl.process_info(info)
+        except AssertionError as e:
+            # tell parent to quit
+            progress_data['w'].write(b'e')
+            raise(e)
+
         exit(0)
 
     # parent
     w.close()
 
     # Wait on trigger byte
-    c = r.read(1)
+    c = r.read(1).decode('utf-8')
     if c is None:
         print("Got EOF on pipe")
-    expect_c = b'a'
-    if c != expect_c:
-        print("Unexpected '" + c.decode('utf-8') +"' instead of '" + expect_c.decode('utf-8') + "' on pipe")
+
+    if c == 'e':
+        print("Child sent us an error indicator")
+        exit(1)
+
+    if c != 'a':
+        print("Child sent Unexpected '" + c + "' on pipe")
 
     if 'DISPLAY' in os.environ:
         # If we have no display, dont try to play it
