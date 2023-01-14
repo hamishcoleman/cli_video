@@ -1,0 +1,106 @@
+#!/usr/bin/perl
+use warnings;
+use strict;
+#
+# load json from a youtube-dl download and output a XML nfo file for kodi
+#
+
+use IO::File;
+use File::Basename;
+use JSON;
+
+sub json_read {
+    my $filename = shift;
+
+    my $fd;
+    if ($filename eq '-') {
+        $fd = *STDIN;
+    } else {
+        $fd = IO::File->new($filename, "r");
+        if (!defined($fd)) {
+            die("error opening $filename");
+        }
+    }
+
+    my $json = JSON->new->utf8->relaxed->pretty->canonical;
+
+    while (<$fd>) {
+        $json->incr_parse($_);
+    }
+    return $json->incr_parse();
+}
+
+sub maybe_tag {
+    my $tagname = shift;
+    my $data = shift;
+
+    if (defined($data) && $data) {
+        return "<".$tagname.">".$data."</".$tagname.">";
+    }
+
+    return "<!-- no ".$tagname." -->";
+    #return "<".$tagname.">FIXME<".$tagname.">";
+}
+
+sub do_one {
+    my $inputname = shift;
+
+    my $db = json_read($inputname);
+
+    if (!defined($db->{season_number}) && !defined($db->{episode_number})) {
+        my $year = substr($db->{upload_date},0,4);
+        my $mmdd = substr($db->{upload_date},4,4);
+        $mmdd =~ s/^0//;
+        $db->{season_number}=1;
+        $db->{episode_number}=$year.'x'.$mmdd;
+        $db->{display_season} = -1;
+        $db->{display_episode} = -1;
+        $db->{showtitle}="Mini Air Crash Investigations";
+
+        $db->{description} =~ s/^Disclaimer:.*$//m;
+        $db->{description} =~ s/^Donations .*$//m;
+    }
+
+    my $nfo;
+    $nfo .= '<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>'."\n";
+    $nfo .= "<episodedetails>\n";
+
+    $nfo .= '    '. maybe_tag('title',     $db->{title}) ."\n";
+    $nfo .= '    '. maybe_tag('showtitle', $db->{showtitle}) ."\n";
+    $nfo .= '    '. maybe_tag('season',    $db->{season_number}) ."\n";
+    $nfo .= '    '. maybe_tag('episode',   $db->{episode_number}) ."\n";
+    $nfo .= '    '. maybe_tag('displayseason',   $db->{display_season}) ."\n";
+    $nfo .= '    '. maybe_tag('displayepisode',  $db->{display_episode}) ."\n";
+    $nfo .= '    '. maybe_tag('plot',      $db->{description}) ."\n";
+
+    my $upload_date = $db->{upload_date};
+    if (defined($upload_date)) {
+        $upload_date =~ s/(\d\d\d\d)(\d\d)(\d\d)/$1-$2-$3/;
+    }
+
+    $nfo .= '    '. maybe_tag('aired',      $upload_date) ."\n";
+
+    $nfo .= '</episodedetails>';
+
+    return $nfo;
+}
+
+sub main {
+    if (scalar(@ARGV)==0) {
+        print(do_one('-'));
+    } else {
+        for my $input (@ARGV) {
+            my $nfo = do_one($input);
+
+            my ($name, $path, $suffix) = fileparse($input, '.info.json', '.json');
+            my $nfoname = $path.$name.".nfo";
+
+            my $fd = IO::File->new($nfoname, "w");
+            if (!defined($fd)) {
+                die("error opening $nfoname");
+            }
+            $fd->print($nfo);
+        }
+    }
+}
+unless(caller) { main(); }
