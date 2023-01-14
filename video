@@ -69,38 +69,94 @@ progress_data = {}
 
 
 def progress_hook(d):
-    if 'downloaded_bytes' in d:
-        downloaded_bytes = d['downloaded_bytes']
-    elif 'total_bytes_estimate' in d:
-        downloaded_bytes = d['total_bytes_estimate']
-    else:
+    if progress_data['triggered']:
+        # we have already triggered the playback
+        return
+
+    total_bytes_estimate = d.get('total_bytes_estimate')
+
+    downloaded_bytes = d.get('downloaded_bytes')
+    if downloaded_bytes is None:
+        downloaded_bytes = total_bytes_estimate
+    if downloaded_bytes is None:
         downloaded_bytes = 1
 
+    if total_bytes_estimate is None:
+        # TODO: a better guess!
+        total_bytes_estimate = -1
+
+    eta = d.get('eta')
+    if eta is None:
+        eta = 600
+    # TODO: a better guess for ETA
+
+    elapsed = d.get('elapsed')
+    if elapsed is None:
+        now = datetime.datetime.now()
+        elapsed = (now - progress_data['start']).seconds
+
+    # TODO: if not provided, actually measure our elapsed
+
     seconds_downloaded = downloaded_bytes / progress_data['bps']
+    etp = eta - progress_data['duration']
+
+    print(
+        f"etp={etp}s eta={eta}s "
+        f"got {seconds_downloaded:.2f}/{progress_data['duration']}s "
+        f", {downloaded_bytes:.2f}/{total_bytes_estimate}b "
+        f"bps={progress_data['bps']:.2f} ",
+        end="",
+        flush=True,
+    )
+
+    # Now apply some heuristics to determine when to trigger the playback
 
     triggered = False
-    if not progress_data['triggered']:
-        # TODO:
-        # - the two thresholds should be parameterised
-        if seconds_downloaded > 20:
-            triggered = True
-        elif downloaded_bytes > 3000000:
-            triggered = True
-        elif d['status'] == 'finished':
-            triggered = True
+    reason = None
 
-    if triggered:
-        progress_data['triggered'] = True
+    if eta < progress_data['duration']:
+        # We want it to have finished downloading by the time we reach the
+        # end of the playback
+        reason = "Enough"
+        triggered = True
 
-        # Could attempt to reduce the race condition, but not close it, by
-        # sending the filename back up to the main process
+    # these tests need better tuning, however they are here to stop
+    # the case where some files cannot even start playback without enough
+    # header bytes
+    if seconds_downloaded < 3:
+        reason = "need seconds"
+        triggered = False
 
-        # if 'tmpfilename' in d:
-        #     filename = d['tmpfilename']
-        # else:
-        #     filename = d['filename']
+    if downloaded_bytes < 700000:
+        reason = "need bytes"
+        triggered = False
 
-        progress_data['w'].write(b'a')
+    if elapsed < 5:
+        reason = "need elapsed"
+        triggered = False
+
+    if d['status'] == 'finished':
+        reason = "Finished"
+        triggered = True
+
+    if reason:
+        print(reason, end="")
+    print("  \r", end="")
+
+    if not triggered:
+        return
+
+    progress_data['triggered'] = True
+
+    # Could attempt to reduce the race condition, but not close it, by
+    # sending the filename back up to the main process
+
+    # if 'tmpfilename' in d:
+    #     filename = d['tmpfilename']
+    # else:
+    #     filename = d['filename']
+
+    progress_data['w'].write(b'a')
 
 
 def print_info(url, rootname):
@@ -187,15 +243,22 @@ def main():
     filesize = info.get('filesize', 2000000)
     duration = info.get('duration', 60)
 
+    if filesize is None:
+        # WTF?
+        filesize = 2000000
+
     if duration == 0:
         duration = 60
 
+    progress_data['filesize'] = filesize
+    progress_data['duration'] = duration
     progress_data['bps'] = filesize / duration
     progress_data['triggered'] = False
 
     print_info(url, rootname)
 
     now = datetime.datetime.now(datetime.timezone.utc).astimezone()
+    progress_data['start'] = now
     now = now.replace(microsecond=0)
     nowstr = now.isoformat()
     with open(logfile, 'a') as f:
@@ -224,6 +287,19 @@ def main():
             ydl.process_info(info)
         except AssertionError as e:
             # tell parent to quit
+            progress_data['w'].write(b'e')
+            raise(e)
+        except youtube_dl.utils.DownloadError as e:
+            # tell parent to quit
+            progress_data['w'].write(b'e')
+            raise(e)
+            # TODO:
+            # youtube_dl.utils.DownloadError: ERROR: unable to download video data: <urlopen error [Errno 101] Network is unreachable>
+            # could be recoverable by retries
+
+        except urllib.error.HTTPError as e:
+            # tell parent to quit
+            # TODO: A retry often works after a "HTTP Error 403: Forbidden"
             progress_data['w'].write(b'e')
             raise(e)
 
