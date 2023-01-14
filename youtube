@@ -1,4 +1,6 @@
 #!/bin/bash
+echo OBSOLETE
+exit 1
 
 #
 # Simple wrapper to allow simple watching of youtube videos
@@ -54,8 +56,6 @@ if [ -z "$BASENAME" ]; then
 fi
 FILE=$DIR/$BASENAME
 
-
-
 # Note this one down
 mkdir -p "$(dirname "$LOGFILE")"
 echo "$(date --rfc-3339=seconds) $URL $BASENAME" >>"$LOGFILE"
@@ -84,30 +84,39 @@ $DL \
 	--continue \
         --format "$FORMAT" \
         --youtube-skip-dash-manifest \
+        --sub-lang en \
+        --write-sub \
         --write-info-json \
 	"$URL" &
 
 echo "Wait for file ${FILE}.part"
 while [ ! -s "${FILE}.part" -a ! -s "${FILE}" ]; do
-	sleep 1
+	sleep 0.1
 done
 
-echo Wait for size
-SIZE=$(stat -c %s "${FILE}.part")
-if [ $? -ne 0 -o -z "$SIZE" ]; then
-    SIZE=0
+if [ ! -e "${FILE}" ]; then
+    echo Wait for size
+    SIZE=$(stat -c %s "${FILE}.part")
+    if [ $? -ne 0 -o -z "$SIZE" ]; then
+        SIZE=0
+    fi
+
+    # FIXME - should vary size based on percentage or bitstream rate
+    while [ "$SIZE" -lt 1000000 -a ! -e "${FILE}" ]; do
+        sleep 1
+        SIZE=$(stat -c %s "${FILE}.part")
+    done
 fi
 
-# FIXME - should vary size based on percentage or bitstream rate
-while [ "$SIZE" -lt 1000000 -a ! -e "${FILE}" ]; do
-    sleep 1
-    SIZE=$(stat -c %s "${FILE}.part")
-done
-
-# Race here between the *.part having the right size and finishing..
+if [ -e "${FILE}" ]; then
+    # fully downloaded
+    PLAY=${FILE}
+else
+    PLAY=${FILE}.part
+fi
 
 # TODO - pause playing music
-mplayer "${FILE}"*
+mplayer "${PLAY}"
 # TODO - unpause playing music
 
 echo "$URL"
