@@ -21,6 +21,11 @@ sys.path.insert(0, os.path.expanduser('~/r/upstream/youtube-dl'))
 import youtube_dl # noqa
 
 
+class LazyListEncoder(json.JSONEncoder):
+    def default(self, o):
+        return list(o)
+
+
 def make_basename(info):
     """Given the json info, construct the output base filename"""
 
@@ -224,7 +229,14 @@ def main():
     ext = info.get('ext', 'unknown')
 
     with open(rootname+'.info.json', 'w') as f:
-        json.dump(info, f, indent=2, sort_keys=True, separators=(',', ': '))
+        json.dump(
+            info,
+            f,
+            indent=2,
+            sort_keys=True,
+            separators=(',', ': '),
+            cls=LazyListEncoder,
+        )
 
     _type = info.get('_type')
     if _type == 'playlist':
