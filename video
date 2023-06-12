@@ -101,7 +101,7 @@ def progress_hook(d):
 
     elapsed = d.get('elapsed')
     if elapsed is None:
-        now = datetime.datetime.now()
+        now = datetime.datetime.now(datetime.timezone.utc)
         elapsed = (now - progress_data['start']).seconds
 
     # TODO: if not provided, actually measure our elapsed
