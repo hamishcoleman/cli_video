@@ -388,14 +388,29 @@ def main():
     if c != 'a':
         print("Child sent Unexpected '" + c + "' on pipe")
 
-    if 'DISPLAY' in os.environ:
-        # If we have no display, dont try to play it
+    if os.path.exists(outname):
+        filename = outname
+    else:
+        # FIXME - race condition with file completing..
+        filename = outname + '.part'
 
-        if os.path.exists(outname):
-            filename = outname
-        else:
-            # FIXME - race condition with file completing..
-            filename = outname + '.part'
+    if 'KODI' in os.environ:
+        # TODO: have a better detection for this situation
+
+        args = ['kodictl', "open"]
+        args += [filename]
+
+        r = subprocess.run(
+            args,
+            stdin=0,
+            stdout=1,
+            stderr=2,
+        )
+        print()
+        print_info(url, rootname)
+        returncode = r.returncode
+    elif 'DISPLAY' in os.environ:
+        # If we have no display, dont try to play it
 
         args = ['mplayer']
         args += ['-stop-xscreensaver']
