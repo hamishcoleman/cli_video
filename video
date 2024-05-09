@@ -25,6 +25,48 @@ sys.path.insert(0, os.path.expanduser('~/r/upstream/yt-dlp'))
 import yt_dlp # noqa
 
 
+def calculate_geometry():
+    if "WINDOWID" not in os.environ:
+        return []
+
+    sp = subprocess.run(
+        ["xwininfo", "-id", os.environ["WINDOWID"], "-stats"],
+        capture_output=True,
+        encoding="utf8",
+        check=True,
+        text=True
+    )
+
+    x=None
+    y=None
+    w=None
+    h=None
+    c=0
+
+    for line in sp.stdout.splitlines():
+        if line.startswith("  Absolute upper-left X:"):
+            x = int(line[26:])
+            c += 1
+        if line.startswith("  Absolute upper-left Y:"):
+            y = int(line[26:])
+            c += 1
+        if line.startswith("  Width:"):
+            w = int(line[9:])
+            c += 1
+        if line.startswith("  Height:"):
+            h = int(line[10:])
+            c += 1
+
+    if c != 4:
+        return []
+
+    # FIXME: this adjustment is a hack, based on one laptop's fvwm config
+    x = max(0, x - 5)
+    y = max(0, y - 33)
+
+    return ["-geometry", f"{w}x{h}+{x}+{y}"]
+
+
 class LazyListEncoder(json.JSONEncoder):
     def default(self, o):
         return list(o)
@@ -357,6 +399,9 @@ def main():
 
         args = ['mplayer']
         args += ['-stop-xscreensaver']
+
+        if "WINDOWID" in os.environ:
+            args += calculate_geometry()
 
         if subs is not None:
             args += ['-sub', subsname]
