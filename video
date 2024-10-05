@@ -215,6 +215,11 @@ def print_info(url, rootname):
     print("file=", rootname)
 
 
+def print_formats(info):
+    for fmt in info["formats"]:
+        print(fmt["format_id"], fmt["format"])
+
+
 def main():
     # TODO:
     # - argsparser
@@ -250,6 +255,7 @@ def main():
         'youtube_include_dash_manifest': False,
         'consoletitle': True,
         'progress_hooks': [progress_hook],
+        "ignore_no_formats_error": True,
     }
 
     # Sometimes, format is not available (raises DownloadError)
@@ -268,15 +274,17 @@ def main():
             ydl = yt_dlp.YoutubeDL(ydl_opts)
             info = ydl.extract_info(url, download=False)
         except yt_dlp.DownloadError as e:
-            if e.args[0].endswith("requested format not available"):
-                del ydl_opts["format"]
-                del ydl_opts["youtube_include_dash_manifest"]
-                retry = True
-            else:
-                print("DownloadError caught")
-                exit(1)
+            print("DownloadError caught:")
+            exit(1)
         else:
             retry = False
+
+    format_id = info.get("format_id")
+    if format_id is None:
+        print("Format not matched")
+        print()
+        print_formats(info)
+        exit(1)
 
     basename = make_basename(info)
     rootname = os.path.join(cachedir, basename)
