@@ -37,11 +37,11 @@ def calculate_geometry():
         text=True
     )
 
-    x=None
-    y=None
-    w=None
-    h=None
-    c=0
+    x = None
+    y = None
+    w = None
+    h = None
+    c = 0
 
     for line in sp.stdout.splitlines():
         if line.startswith("  Absolute upper-left X:"):
@@ -275,6 +275,7 @@ def main():
             info = ydl.extract_info(url, download=False)
         except yt_dlp.DownloadError as e:
             print("DownloadError caught:")
+            print(e)
             exit(1)
         else:
             retry = False
@@ -302,7 +303,7 @@ def main():
 
     _type = info.get('_type')
     if _type == 'playlist':
-        print("Playlist:", info.get('title',''))
+        print("Playlist:", info.get('title', ''))
         for entry in info.get('entries'):
             print(entry.get('webpage_url'))
             print("   ", entry.get('title'))
@@ -368,20 +369,22 @@ def main():
         except AssertionError as e:
             # tell parent to quit
             progress_data['w'].write(b'e')
-            raise(e)
+            raise e
         except yt_dlp.utils.DownloadError as e:
             # tell parent to quit
             progress_data['w'].write(b'e')
-            raise(e)
+            raise e
             # TODO:
-            # yt_dlp.utils.DownloadError: ERROR: unable to download video data: <urlopen error [Errno 101] Network is unreachable>
+            # yt_dlp.utils.DownloadError:
+            # ERROR: unable to download video data: <urlopen error [Errno 101]
+            # Network is unreachable>
             # could be recoverable by retries
 
         except urllib.error.HTTPError as e:
             # tell parent to quit
             # TODO: A retry often works after a "HTTP Error 403: Forbidden"
             progress_data['w'].write(b'e')
-            raise(e)
+            raise e
 
         exit(0)
 
