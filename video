@@ -298,6 +298,8 @@ def main():
         for entry in info.get('entries'):
             print(entry.get('webpage_url'))
             print("   ", entry.get('title'))
+        # TODO:
+        # if playlist has only one entry, restart with that one
         exit(1)
 
     subsname = rootname+'.vtt'
@@ -351,8 +353,10 @@ def main():
         # child
         r.close()
         progress_data['w'] = w
+        print("Downloading", info.get("url"))
         try:
             ydl.process_info(info)
+        # DownloadError, errno 113, No route to host
         except AssertionError as e:
             # tell parent to quit
             progress_data['w'].write(b'e')
