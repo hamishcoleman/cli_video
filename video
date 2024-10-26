@@ -293,8 +293,22 @@ def main():
     ext = info.get('ext', 'unknown')
 
     with open(rootname+'.info.json', 'w') as f:
+        # minimise the contents of the info struct
+        tmp = info
+        if "automatic_captions" in tmp:
+            del tmp["automatic_captions"]
+        if "heatmap" in tmp:
+            del tmp["heatmap"]
+        if "thumbnails" in tmp:
+            for i in range(len(tmp["thumbnails"])-1, -1, -1):
+                if tmp["thumbnails"][i]["preference"] < -3:
+                    del tmp["thumbnails"][i]
+        if "formats" in tmp:
+            for i in range(len(tmp["formats"])-1, -1, -1):
+                if tmp["formats"][i]["format_id"] != format_id:
+                    del tmp["formats"][i]
         json.dump(
-            info,
+            tmp,
             f,
             indent=2,
             sort_keys=True,
