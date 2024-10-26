@@ -16,6 +16,7 @@ import os
 import socket
 import subprocess
 import sys
+import time
 import urllib.request
 
 # Define where the look for the yt_dlp libraries.  I would have used
@@ -217,7 +218,15 @@ def print_info(url, rootname):
 
 def print_formats(info):
     for fmt in info["formats"]:
-        print(fmt["format_id"], fmt["format"])
+        acodec = fmt.get("acodec", "none")
+        if fmt["vcodec"] != "none" and acodec != "none":
+            frags = [
+                fmt["format_id"],
+                fmt["vcodec"],
+                acodec,
+                fmt["format"],
+            ]
+            print(",".join(frags))
 
 
 def main():
@@ -268,24 +277,16 @@ def main():
     # TODO:
     # - dont download the subtitles until we know it is not a playlist
 
-    retry = True
+    retry = 4
     while retry:
-        try:
-            ydl = yt_dlp.YoutubeDL(ydl_opts)
-            info = ydl.extract_info(url, download=False)
-        except yt_dlp.DownloadError as e:
-            print("DownloadError caught:")
-            print(e)
-            exit(1)
-        else:
-            retry = False
-
-    format_id = info.get("format_id")
-    if format_id is None:
-        print("Format not matched")
-        print()
-        print_formats(info)
-        exit(1)
+        ydl = yt_dlp.YoutubeDL(ydl_opts)
+        info = ydl.extract_info(url, download=False)
+        format_id = info.get("format_id")
+        if format_id is not None:
+            # got one!
+            break
+        retry -= 1
+        time.sleep(1)
 
     basename = make_basename(info)
     rootname = os.path.join(cachedir, basename)
@@ -333,6 +334,13 @@ def main():
     progress_data['triggered'] = False
 
     print_info(url, rootname)
+
+    format_id = info.get("format_id")
+    if format_id is None:
+        print("Format not matched")
+        print()
+        print_formats(info)
+        exit(1)
 
     now = datetime.datetime.now(datetime.timezone.utc).astimezone()
     progress_data['start'] = now
