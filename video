@@ -3,10 +3,20 @@
 # Wrapper around the yt_dlp library interface to try and make a usable
 # CLI viewer with local cache
 #
-# requires:
+# :dotsctl:
+#   destdir: ~/bin/
+#   dpkg:
+#     - yt-dlp
+# ...
+#
+# Due to the fast moving "arms rage" nature of the youtube downloading
+# experience, this will work best with a local checkout of yt-dlp:
 #   mkdir -p ~/r/upstream
 #   cd ~/r/upstream
 #   git clone https://github.com/yt-dlp/yt-dlp
+#
+# TODO:
+# - teach dotsctl to clone a repo
 
 from __future__ import unicode_literals
 
