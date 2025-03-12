@@ -311,7 +311,7 @@ def main():
             del tmp["heatmap"]
         if "thumbnails" in tmp:
             for i in range(len(tmp["thumbnails"])-1, -1, -1):
-                if tmp["thumbnails"][i]["preference"] < -3:
+                if tmp["thumbnails"][i].get("preference", -4) < -3:
                     del tmp["thumbnails"][i]
         if "formats" in tmp:
             for i in range(len(tmp["formats"])-1, -1, -1):
