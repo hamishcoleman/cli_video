@@ -488,18 +488,18 @@ def main():
     # - argsparser
     # - older subprocess does not have "run" method
 
-    if len(sys.argv) < 2:
-        url = get_selection()
-    else:
-        url = sys.argv[1]
+    if len(sys.argv) > 1:
+        r = 0
+        for url in sys.argv[1:]:
+            r += do_one_video(url)
+        exit(r)
 
-    # FIXME:
-    # if not url:
-    #   url=`xclip -o`
+    url = get_selection()
 
     r = do_one_video(url)
 
     exit(r)
+
 
 if __name__ == '__main__':
     main()
