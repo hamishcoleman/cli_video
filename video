@@ -276,7 +276,6 @@ def play_with_mplayer(url, rootname, filename, subs, subsname):
 
 
 def do_one_video(url):
-    url = url.strip(' ')
     format = '43/18/35/45/22/best'
     cachedir = os.path.expanduser('~/.youtube')
     logdir = os.path.expanduser('~/s/organizer/youtube/')
@@ -480,7 +479,7 @@ def do_one_video(url):
 
 def get_selection():
     r = subprocess.run(['xclip', '-o'], capture_output=True, text=True)
-    return r.stdout
+    return r.stdout.strip(' ')
 
 
 def main():
@@ -494,9 +493,22 @@ def main():
             r += do_one_video(url)
         exit(r)
 
-    url = get_selection()
+    oldurl = ""
+    while True:
+        url = get_selection()
 
-    r = do_one_video(url)
+        if not url:
+            r = 1
+            break
+
+        if url != oldurl:
+            oldurl = url
+            r = do_one_video(url)
+
+            if r:
+                break
+
+        time.sleep(1)
 
     exit(r)
 
