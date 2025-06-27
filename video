@@ -239,7 +239,7 @@ def print_formats(info):
             print(",".join(frags))
 
 
-def play_with_kodi(uri, rootname, filename):
+def play_with_kodi(url, rootname, filename):
     args = ['kodictl', "open"]
     args += [filename]
 
@@ -466,7 +466,7 @@ def do_one_video(url):
 
     if 'KODI' in os.environ:
         # TODO: have a better detection for this situation
-        return play_with_kodi(uri, rootname, filename)
+        return play_with_kodi(url, rootname, filename)
 
     if 'DISPLAY' in os.environ:
         # If we have no display, dont try to play it
