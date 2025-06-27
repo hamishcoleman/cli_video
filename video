@@ -478,14 +478,18 @@ def do_one_video(url):
     # - if download has not finished, we hang here, waiting
 
 
+def get_selection():
+    r = subprocess.run(['xclip', '-o'], capture_output=True, text=True)
+    return r.stdout
+
+
 def main():
     # TODO:
     # - argsparser
     # - older subprocess does not have "run" method
 
     if len(sys.argv) < 2:
-        r = subprocess.run(['xclip', '-o'], capture_output=True, text=True)
-        url = r.stdout
+        url = get_selection()
     else:
         url = sys.argv[1]
 
