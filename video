@@ -239,24 +239,26 @@ def print_formats(info):
             print(",".join(frags))
 
 
-def main():
-    # TODO:
-    # - argsparser
-    # - older subprocess does not have "run" method
+def play_with_kodi(uri, rootname, filename):
+    args = ['kodictl', "open"]
+    args += [filename]
 
-    if len(sys.argv) < 2:
-        r = subprocess.run(['xclip', '-o'], capture_output=True, text=True)
-        url = r.stdout
-    else:
-        url = sys.argv[1]
+    r = subprocess.run(
+        args,
+        stdin=0,
+        stdout=1,
+        stderr=2,
+    )
+    print()
+    print_info(url, rootname)
+    return r.returncode
+
+
+def do_one_video(url):
     url = url.strip(' ')
     format = '43/18/35/45/22/best'
     cachedir = os.path.expanduser('~/.youtube')
     logdir = os.path.expanduser('~/s/organizer/youtube/')
-
-    # FIXME:
-    # if not url:
-    #   url=`xclip -o`
 
     if not os.path.exists(cachedir):
         os.makedirs(cachedir)
@@ -334,7 +336,7 @@ def main():
             print("   ", entry.get('title'))
         # TODO:
         # if playlist has only one entry, restart with that one
-        exit(1)
+        return 1
 
     subsname = rootname+'.vtt'
     subs = get_subs(info)
@@ -443,20 +445,9 @@ def main():
 
     if 'KODI' in os.environ:
         # TODO: have a better detection for this situation
+        return play_with_kodi(uri, rootname, filename)
 
-        args = ['kodictl', "open"]
-        args += [filename]
-
-        r = subprocess.run(
-            args,
-            stdin=0,
-            stdout=1,
-            stderr=2,
-        )
-        print()
-        print_info(url, rootname)
-        returncode = r.returncode
-    elif 'DISPLAY' in os.environ:
+    if 'DISPLAY' in os.environ:
         # If we have no display, dont try to play it
 
         args = ['mplayer']
@@ -480,11 +471,30 @@ def main():
     else:
         returncode = 0
 
-    exit(returncode)
+    return returncode
 
     # FIXME:
     # - if download has not finished, we hang here, waiting
 
+
+def main():
+    # TODO:
+    # - argsparser
+    # - older subprocess does not have "run" method
+
+    if len(sys.argv) < 2:
+        r = subprocess.run(['xclip', '-o'], capture_output=True, text=True)
+        url = r.stdout
+    else:
+        url = sys.argv[1]
+
+    # FIXME:
+    # if not url:
+    #   url=`xclip -o`
+
+    r = do_one_video(url)
+
+    exit(r)
 
 if __name__ == '__main__':
     main()
