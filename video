@@ -254,6 +254,27 @@ def play_with_kodi(uri, rootname, filename):
     return r.returncode
 
 
+def play_with_mplayer(url, rootname, filename, subs, subsname):
+    args = ['mplayer']
+    args += ['-stop-xscreensaver']
+
+    if "WINDOWID" in os.environ:
+        args += calculate_geometry()
+
+    if subs is not None:
+        args += ['-sub', subsname]
+    args += [filename]
+
+    r = subprocess.run(
+        args,
+        stdin=0,
+        stdout=1,
+        stderr=2,
+    )
+    print_info(url, rootname)
+    return r.returncode
+
+
 def do_one_video(url):
     url = url.strip(' ')
     format = '43/18/35/45/22/best'
@@ -449,29 +470,9 @@ def do_one_video(url):
 
     if 'DISPLAY' in os.environ:
         # If we have no display, dont try to play it
+        return play_with_mplayer(url, rootname, filename, subs, subsname)
 
-        args = ['mplayer']
-        args += ['-stop-xscreensaver']
-
-        if "WINDOWID" in os.environ:
-            args += calculate_geometry()
-
-        if subs is not None:
-            args += ['-sub', subsname]
-        args += [filename]
-
-        r = subprocess.run(
-            args,
-            stdin=0,
-            stdout=1,
-            stderr=2,
-        )
-        print_info(url, rootname)
-        returncode = r.returncode
-    else:
-        returncode = 0
-
-    return returncode
+    return 0
 
     # FIXME:
     # - if download has not finished, we hang here, waiting
