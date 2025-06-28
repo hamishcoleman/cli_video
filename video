@@ -508,6 +508,8 @@ def main():
             continue
 
         if url != oldurl:
+            print("Url:", url)
+
             oldurl = url
             r = do_one_video(url)
 
