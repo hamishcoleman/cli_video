@@ -255,14 +255,16 @@ def play_with_kodi(url, rootname, filename):
 
 
 def play_with_mplayer(url, rootname, outname, subs, subsname):
-    partname = outname + ".part"
-    if os.path.exists(partname):
-        filename = partname
-    elif os.path.exists(outname):
-        # FIXME - race condition with file completing..
+    if os.path.exists(outname):
+        # we have the final filename, so no need to do race avoidance
         filename = outname
     else:
-        raise ValueError("race condition triggered")
+        # FIXME - race is possible with file completing..
+        partname = outname + ".part"
+        if not os.path.exists(partname):
+            raise ValueError("race condition triggered")
+        else:
+            filename = partname
 
     args = ['mplayer']
     args += ['-stop-xscreensaver']
