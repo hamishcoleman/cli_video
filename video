@@ -515,12 +515,18 @@ def main():
         print("Url:", url)
 
         oldurl = url
-        r = do_one_video(url)
+        try:
+            r = do_one_video(url)
+        except yt_dlp.utils.DownloadError as e:
+            if isinstance(e.exc_info[1], yt_dlp.utils.UnsupportedError):
+                r = 0
+            else:
+                exit(1)
+
         print()
 
         if r:
             break
-
 
     exit(r)
 
