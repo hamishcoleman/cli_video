@@ -457,11 +457,14 @@ def do_one_video(url):
     if c != 'a':
         print("Child sent Unexpected '" + c + "' on pipe")
 
-    if os.path.exists(outname):
+    partname = outname + ".part"
+    if os.path.exists(partname):
+        filename = partname
+    elif os.path.exists(outname):
+        # FIXME - race condition with file completing..
         filename = outname
     else:
-        # FIXME - race condition with file completing..
-        filename = outname + '.part'
+        raise ValueError("race condition triggered")
 
     if 'KODI' in os.environ:
         # TODO: have a better detection for this situation
