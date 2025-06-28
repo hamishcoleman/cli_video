@@ -504,11 +504,18 @@ def main():
             r = 1
             break
 
-        video = False
-        if url.startswith("https://www.youtube.com"):
-            video = True
+        prefixes = [
+            "https://www.youtube.com",
+            "https://youtu.be",
+        ]
 
-        if video = False:
+        video = False
+        for p in prefixes:
+            if url.startswith(p):
+                video = True
+                break
+
+        if not video:
             time.sleep(1)
             continue
 
