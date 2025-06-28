@@ -254,7 +254,16 @@ def play_with_kodi(url, rootname, filename):
     return r.returncode
 
 
-def play_with_mplayer(url, rootname, filename, subs, subsname):
+def play_with_mplayer(url, rootname, outname, subs, subsname):
+    partname = outname + ".part"
+    if os.path.exists(partname):
+        filename = partname
+    elif os.path.exists(outname):
+        # FIXME - race condition with file completing..
+        filename = outname
+    else:
+        raise ValueError("race condition triggered")
+
     args = ['mplayer']
     args += ['-stop-xscreensaver']
 
@@ -457,22 +466,13 @@ def do_one_video(url):
     if c != 'a':
         print("Child sent Unexpected '" + c + "' on pipe")
 
-    partname = outname + ".part"
-    if os.path.exists(partname):
-        filename = partname
-    elif os.path.exists(outname):
-        # FIXME - race condition with file completing..
-        filename = outname
-    else:
-        raise ValueError("race condition triggered")
-
     if 'KODI' in os.environ:
         # TODO: have a better detection for this situation
-        return play_with_kodi(url, rootname, filename)
+        return play_with_kodi(url, rootname, outname)
 
     if 'DISPLAY' in os.environ:
         # If we have no display, dont try to play it
-        return play_with_mplayer(url, rootname, filename, subs, subsname)
+        return play_with_mplayer(url, rootname, outname, subs, subsname)
 
     return 0
 
@@ -505,18 +505,22 @@ def main():
             break
 
         if not url.startswith("https://"):
+            time.sleep(1)
             continue
 
-        if url != oldurl:
-            print("Url:", url)
+        if url == oldurl:
+            time.sleep(1)
+            continue
 
-            oldurl = url
-            r = do_one_video(url)
+        print("Url:", url)
 
-            if r:
-                break
+        oldurl = url
+        r = do_one_video(url)
+        print()
 
-        time.sleep(1)
+        if r:
+            break
+
 
     exit(r)
 
