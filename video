@@ -504,6 +504,9 @@ def main():
             r = 1
             break
 
+        if not url.startswith("https://"):
+            continue
+
         if url != oldurl:
             oldurl = url
             r = do_one_video(url)
