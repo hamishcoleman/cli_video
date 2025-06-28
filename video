@@ -504,7 +504,11 @@ def main():
             r = 1
             break
 
-        if not url.startswith("https://"):
+        video = False
+        if url.startswith("https://www.youtube.com"):
+            video = True
+
+        if video = False:
             time.sleep(1)
             continue
 
