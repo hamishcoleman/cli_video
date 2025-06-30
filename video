@@ -255,16 +255,19 @@ def play_with_kodi(url, rootname, filename):
 
 
 def play_with_mplayer(url, rootname, outname, subs, subsname):
-    if os.path.exists(outname):
-        # we have the final filename, so no need to do race avoidance
+    # A stable name to use for playback
+    playname = outname + ".play"
+    partname = outname + ".part"
+    filename = None
+
+    try:
+        os.link(partname, playname)
+        filename = playname
+        cleanup = True
+    except FileNotFoundError:
+        # If the partial file doesnt exist, we must have the final name
         filename = outname
-    else:
-        # FIXME - race is possible with file completing..
-        partname = outname + ".part"
-        if not os.path.exists(partname):
-            raise ValueError("race condition triggered")
-        else:
-            filename = partname
+        cleanup = False
 
     args = ['mplayer']
     args += ['-stop-xscreensaver']
@@ -282,6 +285,9 @@ def play_with_mplayer(url, rootname, outname, subs, subsname):
         stdout=1,
         stderr=2,
     )
+    if cleanup:
+        os.unlink(playname)
+
     print_info(url, rootname)
     return r.returncode
 
