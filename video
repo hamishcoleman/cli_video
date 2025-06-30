@@ -239,7 +239,7 @@ def print_formats(info):
             print(",".join(frags))
 
 
-def play_with_kodi(url, rootname, filename):
+def play_with_kodi(filename):
     args = ['kodictl', "open"]
     args += [filename]
 
@@ -249,12 +249,10 @@ def play_with_kodi(url, rootname, filename):
         stdout=1,
         stderr=2,
     )
-    print()
-    print_info(url, rootname)
     return r.returncode
 
 
-def play_with_mplayer(url, rootname, outname, subs, subsname):
+def play_with_mplayer(outname, subs, subsname):
     # A stable name to use for playback
     playname = outname + ".play"
     partname = outname + ".part"
@@ -288,7 +286,6 @@ def play_with_mplayer(url, rootname, outname, subs, subsname):
     if cleanup:
         os.unlink(playname)
 
-    print_info(url, rootname)
     return r.returncode
 
 
@@ -476,13 +473,18 @@ def do_one_video(url):
 
     if 'KODI' in os.environ:
         # TODO: have a better detection for this situation
-        return play_with_kodi(url, rootname, outname)
+        r = play_with_kodi(outname)
 
-    if 'DISPLAY' in os.environ:
+    elif 'DISPLAY' in os.environ:
         # If we have no display, dont try to play it
-        return play_with_mplayer(url, rootname, outname, subs, subsname)
+        r = play_with_mplayer(outname, subs, subsname)
 
-    return 0
+    else:
+        raise ValueError("unexpected")
+
+    print()
+    print_info(url, rootname)
+    return r
 
     # FIXME:
     # - if download has not finished, we hang here, waiting
