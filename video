@@ -511,8 +511,8 @@ def main():
         url = get_selection()
 
         if not url:
-            r = 1
-            break
+            time.sleep(1)
+            continue
 
         prefixes = [
             "https://www.youtube.com",
