@@ -311,6 +311,7 @@ def do_one_video(url):
         'consoletitle': True,
         'progress_hooks': [progress_hook],
         "ignore_no_formats_error": True,
+        "cookiefile": "/home/hamish/.ytcookie.txt",
     }
 
     # Sometimes, format is not available (raises DownloadError)
@@ -333,6 +334,17 @@ def do_one_video(url):
             break
         retry -= 1
         time.sleep(1)
+
+    # TODO:
+    # detect
+    # WARNING: [youtube] Join this channel to get access to members-only content like this video, and other exclusive perks.
+    # WARNING: No video formats found!
+    # WARNING: Requested format is not available
+    #
+    # Detect
+    # WARNING: [youtube] Sign in to confirm you’re not a bot.
+    # simulate
+    # ./yt-dlp --cookies cookies.txt --cookies-from-browser firefox
 
     basename = make_basename(info)
     rootname = os.path.join(cachedir, basename)
