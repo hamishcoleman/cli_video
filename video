@@ -545,6 +545,12 @@ def main():
             time.sleep(1)
             continue
 
+        # hack it.  hack it good
+        try:
+            url = url[:url.index("&list=")]
+        except ValueError:
+            pass
+
         print("Url:", url)
 
         oldurl = url
