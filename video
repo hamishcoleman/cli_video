@@ -519,55 +519,64 @@ def main():
         exit(r)
 
     seen = {}
-    while True:
-        url = get_selection()
-        origurl = url
 
-        if not url:
-            time.sleep(1)
-            continue
+    try:
+        while True:
+            url = get_selection()
+            origurl = url
 
-        prefixes = [
-            "https://www.youtube.com",
-            "https://youtu.be",
-        ]
+            if not url:
+                time.sleep(1)
+                continue
 
-        video = False
-        for p in prefixes:
-            if url.startswith(p):
-                video = True
-                break
+            prefixes = [
+                "https://www.youtube.com",
+                "https://youtu.be",
+            ]
 
-        if not video:
-            time.sleep(1)
-            continue
+            video = False
+            for p in prefixes:
+                if url.startswith(p):
+                    video = True
+                    break
 
-        if origurl in seen:
-            continue
+            if not video:
+                time.sleep(1)
+                continue
 
-        # hack it.  hack it good
-        try:
-            url = url[:url.index("&list=")]
-        except ValueError:
-            pass
+            if origurl in seen:
+                continue
 
-        print("Url:", url)
+            # hack it.  hack it good
+            try:
+                url = url[:url.index("&list=")]
+            except ValueError:
+                pass
 
-        seen[origurl] = True
-        try:
-            r = do_one_video(url)
-        except yt_dlp.utils.DownloadError as e:
-            if isinstance(e.exc_info[1], yt_dlp.utils.UnsupportedError):
-                r = 0
-            else:
-                exit(1)
+            print("Url:", url)
 
+            seen[origurl] = True
+            try:
+                r = do_one_video(url)
+            except yt_dlp.utils.DownloadError as e:
+                if isinstance(e.exc_info[1], yt_dlp.utils.UnsupportedError):
+                    r = 0
+                else:
+                    exit(1)
+
+            print()
+
+            # return the code on errors
+            if r:
+                exit(r)
+
+    except KeyboardInterrupt:
         print()
+        print("Seen:")
+        for url in seen.keys():
+            print(url)
 
-        if r:
-            break
-
-    exit(r)
+    # exit with no error on ctrl-c
 
 
 if __name__ == '__main__':
