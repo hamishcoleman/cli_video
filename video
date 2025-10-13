@@ -518,9 +518,10 @@ def main():
             r += do_one_video(url)
         exit(r)
 
-    oldurl = ""
+    seen = {}
     while True:
         url = get_selection()
+        origurl = url
 
         if not url:
             time.sleep(1)
@@ -541,8 +542,7 @@ def main():
             time.sleep(1)
             continue
 
-        if url == oldurl:
-            time.sleep(1)
+        if origurl in seen:
             continue
 
         # hack it.  hack it good
@@ -553,7 +553,7 @@ def main():
 
         print("Url:", url)
 
-        oldurl = url
+        seen[origurl] = True
         try:
             r = do_one_video(url)
         except yt_dlp.utils.DownloadError as e:
