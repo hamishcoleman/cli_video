@@ -545,6 +545,7 @@ def main():
                 continue
 
             if origurl in seen:
+                time.sleep(1)
                 continue
 
             # hack it.  hack it good
