@@ -496,6 +496,12 @@ def do_one_video(url):
 
     print()
     print_info(url, rootname)
+
+    try:
+        os.wait()
+    except ChildProcessError:
+        pass
+
     return r
 
     # FIXME:
